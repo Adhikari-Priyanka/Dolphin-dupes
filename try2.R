@@ -55,25 +55,33 @@ old6 <- cbind(old5,
               "End_hour" =hour(hms(old_time_end)), 
               "End_min" =minute(hms(old_time_end)))
 
+
 #remove not required
 rm(web_time, old_time_start, old_time_end)
 rm(web5, old5)
 }
+
+
 #Result: old6 and web6
 
 #fix NR and NA
 NR_remove <- function(sheet){
+  sheet1 <- data.frame()
   for (i in 1:nrow(sheet)){
     for (j in 1:ncol(sheet)){
-      if (sheet[i,j] == "NR"){
-        sheet <- sheet[-i,]
+      if (sheet[i,j] == "NR" ||
+          sheet[i,j] == "NA" ||
+          sheet[i,j] == "na"){
+        sheet1 <- sheet[-i,]
       }
     }
   }
-  sheet1 <<- sheet
+  sheet2 <<- sheet1
 }
+
 NR_remove(web6)
-web7 <- sheet1
+sheet2
+
 NR_remove(old6)
 old7 <- sheet1
 
@@ -117,35 +125,47 @@ check_dupes <- function(web, old, correction){
                                      Year == web_year &
                                      Month == web_month &
                                      Day == web_day)
-    #Use an if loop
-    #extract web time
-    web_hour <- (web %>% pull(7))[i]
-    web_min <- (web %>% pull(8))[i]
-    #put extra column in filtered_old for what kinda match
     filtered_old <- filtered_old %>% mutate("Match" = rep(0, nrow(filtered_old)))
-    for (j in 1:nrow(filtered_old)){
-      old_start_hour <- (filtered_old %>% pull(8))[j]
-      old_start_min <- (filtered_old %>% pull(9))[j]
-      old_end_hour <- (filtered_old %>% pull(10))[j]
-      old_end_min <- (filtered_old %>% pull(11))[j]
-      
-      if ((web_hour == old_start_hour) ||  (web_hour == old_end_hour)){
-        filtered_old$Match[j] = "Exact"}
-      else if (  (web_hour > old_start_hour) && (web_hour < old_end_hour)  ){
-        filtered_old$Match[j] = "Range"}
-      else {filtered_old$Match[j] = "No match"}
-      
+    
+    #only process with the time thing if there are actually matches
+    if (nrow(filtered_old) > 0){
+      #extract web time
+      web_hour <- (web %>% pull(7))[i]
+      web_min <- (web %>% pull(8))[i]
+      #put extra column in filtered_old for what kinda match
+      nm <- c() #rows in filtered_old that are not matches
+      for (j in 1:nrow(filtered_old)){
+        old_start_hour <- (filtered_old %>% pull(8))[j]
+        #old_start_min <- (filtered_old %>% pull(9))[j]
+        old_end_hour <- (filtered_old %>% pull(10))[j]
+        #old_end_min <- (filtered_old %>% pull(11))[j]
+        
+        #first see if old_start_hour is the same as old_end_hour
+        if(old_start_hour == old_end_hour){
+          if (web_hour == old_start_hour){
+            filtered_old$Match[j] = "Exact"}}
+        
+        else if (  (web_hour > old_start_hour) & (web_hour < old_end_hour)  ){
+          filtered_old$Match[j] = "Range"}
+        
+        else {
+          filtered_old$Match[j] = "No match"
+          nm <- c(nm, j)}
+      }
+      #remove non matches from filtered_old
+      filtered_old <- filtered_old[ -nm ,]
+      #Results#
+      #CSV with web_id_dupes and old_id_matches
+      old_id_matches <- (filtered_old  %>% pull(7))
+      old_match_type <- (filtered_old  %>% pull(12))
+      web_id_dupe <- (web %>% pull(6))[i]
+      res <- data.frame(Web_ids_of_dupes= web_id_dupe,
+                        Old_id_of_matches= (as.numeric(old_id_matches)+correction),
+                        Match_type= old_match_type)
+      result <- rbind(result, res)
     }
     
-    #Results#
-    #CSV with web_id_dupes and old_id_matches
-    old_id_matches <- (filtered_old  %>% pull(7))
-    old_match_type <- (filtered_old  %>% pull(12))
-    web_id_dupe <- (web %>% pull(6))[i]
-    res <- data.frame(Web_ids_of_dupes= web_id_dupe,
-                      Old_id_of_matches= (old_id_matches+correction),
-                      Match_type= old_match_type)
-    result <- rbind(result, res)
+
   }
   write.csv(result, "test5_Dupes_and_matches.csv")
   final_result <<- result
@@ -153,7 +173,7 @@ check_dupes <- function(web, old, correction){
 
 #plug in the db
 #web 11852 rows, old 44193 rows#
-system.time(check_dupes(web=web7[1:50,], old= old7[1:50,], correction=1))
+system.time(check_dupes(web=web6[880:890,], old= old6, correction=1))
 
 #check time
 final_result <- read.csv("test3_Dupes_and_matches.csv")
@@ -191,7 +211,7 @@ dupe_col <- function(web, dupe_where){
 dupe_col(web=web_og, dupe_where=dupe_id)
 
 #is this in line with the manual check?
-mn_dupe <- which(web_og$DUP== "yes")
+mn_dupe <- which(web$DUP== "yes")
 mn_dupe %in% dupe_id
 
 #checking final_result in r
