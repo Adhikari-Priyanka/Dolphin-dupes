@@ -115,7 +115,7 @@ check_dupes <- function(web, old, correction){
                       old_start_min= old_srt_min,
                       old_end_hour= old_end_hour,
                       old_end_min= old_end_min
-                      )
+    )
     #Binding the matched ids in one csv file
     result <- rbind(result, res)
   }
@@ -127,7 +127,7 @@ check_dupes <- function(web, old, correction){
 
 #plug in the db
 #web 11852 rows, old 44193 rows#
-check_dupes_time <- system.time(check_dupes(web=web6[183,], old= old6, correction=1))
+check_dupes_time <- system.time(check_dupes(web=web6, old= old6, correction=1))
 
 #to the time thing man idk anymore
 #extract web time
@@ -146,36 +146,29 @@ time_thing <- function(res){
     #pull old_time
     old_start_hour <- (res %>% pull(old_start_hour))[i]
     old_start_min <- (res %>% pull(old_start_min))[i]
+    old_start <- (old_start_hour*60)+old_start_min#convert to mins
     old_end_hour <- (res %>% pull(old_end_hour))[i]
     old_end_min <- (res %>% pull(old_end_min))[i]
+    old_end <- (old_end_hour*60)+old_end_min#convert to mins
     
-    
-    
-    if((web_hour==old_start_hour) | (web_hour==old_end_hour)){ # if hour is same
-      
-      
-      "
-      if ((web_min == old_start_min) | (web_min == old_end_min)){ #if min is same then exact match
-        res$match_type[i] = "Exact"
+    if(old_start == old_end){# old_st == old_end
+      if(web_time == old_start){#is web_time the same?
+        res$match_type[i]  = "Exact match"
         res$y_n[i]="yes"}
-      else if (old_start_min == old_end_min){#first check if start and end time is the same
-        
-        (web_min > old_start_min) & (web_min < old_end_hour)
-        
-        #res$match_type[i] = "Within range min"
-        #res$y_n[i]= "maybe"} #if min is in range then hour range
-      else { 
+      else {#web time is different
         res$match_type[i]  = "No match"
-        res$y_n[i]="no" }
-        "
-    }
-    else if ((web_hour > old_start_hour) & (web_hour < old_end_hour)){
-      res$match_type[i]  = "Within range hour"
-      res$y_n[i]= "maybe"
-      }
-    else {res$match_type[i]  = "No match"
-        res$y_n[i]="no"}
+        res$y_n[i]="no"}    }
+    else { #old_st != old_end
+      if ( (web_time>=old_start)  &  (web_time<=old_end) ){#is web in range
+        res$match_type[i]  = "Within range"
+        res$y_n[i]="maybe"}
+      else {#web is not in range
+        res$match_type[i]  = "No match"
+        res$y_n[i]="no"}    }
+    
   }
+  
+  
   #filter time_result by matches
   time_result <<- res
   write.csv(time_result, "test4_time_result.csv")
@@ -185,6 +178,19 @@ time_thing <- function(res){
 time_thing_time <- system.time(time_thing(res= final_result))
 
 time_result <- read.csv("test4_time_result.csv")
+
+
+
+#what do time_results look like?
+length(which(time_result$y_n=="yes"))
+length(which(time_result$y_n=="no"))
+length(which(time_result$y_n=="maybe"))
+
+
+
+
+
+
 
 #finally, add a row in web_og of dupes
 #######multiples
