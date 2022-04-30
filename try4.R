@@ -179,74 +179,58 @@ time_thing_time <- system.time(time_thing(res= final_result))
 
 time_result <- read.csv("test4_time_result.csv")
 
-
-
 #what do time_results look like?
 length(which(time_result$y_n=="yes"))
 length(which(time_result$y_n=="no"))
 length(which(time_result$y_n=="maybe"))
+length(unique(time_result$Web_ids_of_dupes))
+nrow(time_result)
 
-
-
-
-
-
+#filter by yes and maybe
+fltr <- time_result %>% filter(y_n == "yes" | y_n == "maybe")
+write.csv( fltr,"test4_DONE.csv")
 
 #finally, add a row in web_og of dupes
-#######multiples
 web_og <- read.csv("web_og.csv")
-time_result <- read.csv("test4_time_result.csv")#load time_results
+DONE_web_og <- web_og %>% mutate(web_id=1:nrow(web_og)  ,y_n=rep(0, nrow(web_og)))
 
-#for each line of only_dupes, go to the web_og and add the stuff in match_type and y_n
-DONE_web_og <- web_og %>% mutate(match_type=rep(0, nrow(web_og)),
-                                 y_n=rep("no", nrow(web_og)))
-##what if multiple matches?
-if (unique(only_dupes$Web_ids_of_dupes) < nrow(only_dupes)){
-  print("there are multiples :( ")
-}
-
-else {
-  #put stuff in relevant columns
-  for(i in (only_dupes$Web_ids_of_dupes)){
-    DONE_web_og$match_type[i]<- only_dupes$match_type
-    DONE_web_og$y_n[i]<- only_dupes$y_n 
-    
+for (i in 1:nrow(fltr)){
+  if (fltr$y_n[i] == "yes"){ #if exact match
+    DONE_web_og[fltr$Web_ids_of_dupes[i],30] = "yes"
   }
-}
-
-
-
-
-dupe_id <- unique(final_result[,c(2)]) #####fix
-
-dupe_col <- function(web, dupe_where){
-  complt <- web %>% mutate(Duplicate = rep(0, nrow(web)))
-  for (i in dupe_where){
-    complt$Duplicate[i] ="TRUE"
+  
+  else if (fltr$y_n[i] == "maybe") { #if maybe
+    DONE_web_og[fltr$Web_ids_of_dupes[i],30] = "maybe"
   }
-  ans <<- complt
-  write.csv(ans, "test4_DONE.csv")
+  
 }
-dupe_col(web=web_og, dupe_where=dupe_id)
+
+write.csv(DONE_web_og, "test4_DONE_web_og.csv")
 
 
-#checking final_result
-web_og <- read.csv("web_og.csv")
-check <- read.csv("test4_Dupes_and_matches.csv")
-i=floor(runif(1, 1, nrow(check)))
-###fix columns
-web[ check[i,2], 8:13]
-old[ check[i, 5], 9:14]
+
+
+#check if web_id is repeated?
+n <- data.frame(table(fltr$Web_ids_of_dupes))
+repeats <- (fltr[ fltr$Web_ids_of_dupes %in% n$Var1[n$Freq>1] ,c(1,4)])
+repeats[1:5,]
+write.csv(repeats, "test4_repeat-duplicates.csv")
 
 
 #is this in line with the manual check?
 mn_dupe <- which(web_og$ï..DUP== "yes")
-mn_dupe <- c(mn_dupe, which(web_og$ï..DUP== "Yes") )
 length(mn_dupe)
 length(which(mn_dupe %in% time_result$Web_ids_of_dupes))
+
+
 
 #checking final_result in r
 i=floor(runif(1, 1, nrow(final_result)))
 i=which(final_result==883)
 web[ final_result[i,1], 8:13]
 old[ final_result[i, 2], 9:14]
+
+
+
+
+
