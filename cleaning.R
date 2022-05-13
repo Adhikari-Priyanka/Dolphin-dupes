@@ -7,7 +7,8 @@ web <- read_csv("web_og.csv")
 
 ##First row is column names in lowercase
 old <- old[-1,]
-old <-old %>% rename
+old <- old %>% rename(day= Day, month= Month, year= Year,
+                      time_start=Start_time, time_end=End_time, species = Species)
 web <-web %>% rename(day= Day, month= Month, year= Year, species= species_code, time1=Time)
 
 clean_web <- function(data){
