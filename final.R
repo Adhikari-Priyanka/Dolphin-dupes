@@ -59,7 +59,10 @@ check_dupes <- function(web, old){
         result$match_type[i]  = "No match"
         result$y_n[i]="no"}    }
     else { #old_st != old_end
-      if ( (web_time>=old_start)  &  (web_time<=old_end) ){#is web in range
+      if ( (web_time==old_start)  |  (web_time==old_end) ){#is web in range
+        result$match_type[i]  = "Either match"
+        result$y_n[i]="maybe"}
+      else if ( (web_time>old_start)  &  (web_time<old_end) ){#is web in range
         result$match_type[i]  = "Within range"
         result$y_n[i]="maybe"}
       else {#web is not in range
@@ -73,14 +76,12 @@ check_dupes <- function(web, old){
 
 #plug in the db
 #web 11852 rows, old 44193 rows
-write.csv(check_dupes(web=web1[10,], old= old1), "matches_and_dupes.csv")
+write.csv(check_dupes(web=web1, old= old1), "test5_matches_and_dupes.csv")
 
 check_dupes_time <- system.time(check_dupes(web=web1, old= old1))
 
-res <- read_csv("matches_and_dupes.csv")
+res <- read_csv("test5_matches_and_dupes.csv")
 web_og <- read.csv("web_og.csv")
-res <- read.csv("test4_time_result.csv")
-
 
 in_og <- function(res, og){
   res <- res %>% filter(y_n == "yes" | y_n == "maybe") #filter by yes and maybe
@@ -98,7 +99,19 @@ in_og <- function(res, og){
 
 done <- in_og(res= res, og= web_og)
 
+write.csv(done, "test5_web_og.csv")
 
-write.csv(done, "wutt.csv")
+
+
+#figure out maybes
+#filter by maybe. 
+res <- read_csv("FINAL_matches_and_dupes.csv")
+res1 <- res %>% select(Web_ids_of_dupes, old_id_of_matches,y_n) %>% 
+  filter(y_n == "maybe")
+web_og <- read.csv("web_og.csv")
+old_og <- read.csv("OLD_og.csv")
+
+
+
 
 
