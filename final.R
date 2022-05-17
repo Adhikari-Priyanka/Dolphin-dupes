@@ -86,12 +86,11 @@ web_og <- read.csv("web_og.csv")
 in_og <- function(res, og){
   res <- res %>% filter(y_n == "yes" | y_n == "maybe") #filter by yes and maybe
   #finally, add a column in web_og of dupes
-  DONE_web_og <- og %>% mutate(web_id=1:nrow(og)  ,y_n=rep(0, nrow(og)))
+  DONE_web_og <- og %>% mutate(web_id=1:nrow(og), 
+                               match_type=rep(0,nrow(og))   ,y_n=rep(0, nrow(og)))
     for (i in 1:nrow(res)){
-    if (res$y_n[i] == "yes"){ #if exact match
-      DONE_web_og$y_n[res$Web_ids_of_dupes[i]] = "yes"}
-    else if (res$y_n[i] == "maybe") { #if maybe
-      DONE_web_og$y_n[res$Web_ids_of_dupes[i]] = "maybe"}
+      DONE_web_og$y_n[res$Web_ids_of_dupes[i]] = res$y_n[i]
+      DONE_web_og$match_type[res$Web_ids_of_dupes[i]] = res$match_type[i]
   }
   return( DONE_web_og)
   

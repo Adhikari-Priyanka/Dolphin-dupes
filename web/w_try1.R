@@ -101,6 +101,7 @@ check_dupes <- function(web, old){
     
     if( web_time == old_start){result$y_n[i]="yes"}
     if (web_time == old_end){result$y_n[i]="yes"}
+    else if (web_time > old_start & web_time<old_end){results$y_n[i]="maybe"}
     
   }
   return(result)
@@ -110,10 +111,10 @@ check_dupes <- function(web, old){
 #plug in the db
 #web 11852 rows, old 44193 rows
 res<- check_dupes(web=web1, old= md1)
-write.csv(res, "test1_matches_and_dupes.csv")
+write.csv(res, "test2_matches_and_dupes.csv")
 
 
-res <- read_csv("test1_matches_and_dupes.csv")
+res <- read_csv("test2_matches_and_dupes.csv")
 web_og <- read.csv("web_w.csv")
 
 in_og <- function(res, og){
@@ -133,7 +134,7 @@ in_og <- function(res, og){
 done <- in_og(res= res, og= web_og)
 
 
-write.csv(done, "test1_DONE_web_w.csv")
+write.csv(done, "test2_DONE_web_w.csv")
 
 
 
